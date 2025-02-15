@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: backend
+  profiles:
+    active: dev
+
+server:
+  servlet:
+    context-path: /api
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=store-db;trustServerCertificate=true
+    username: sa
+    password: SqlServer2023!
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+#  jpa:
+#    database-platform: org.hibernate.dialect.SQLServerDialect
+#    hibernate:
+#      ddl-auto: update
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        format_sql: true
+server:
+  port: 8080
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:sqlserver://sqlserver:1433;databaseName=store-db;trustServerCertificate=true
+    username: sa
+    password: SqlServer2023!
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+#  jpa:
+#    database-platform: org.hibernate.dialect.SQLServerDialect
+#    hibernate:
+#      ddl-auto: none
+#    show-sql: false
+server:
+  port: 80
