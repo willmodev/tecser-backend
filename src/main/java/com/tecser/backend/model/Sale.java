@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -17,9 +18,13 @@ public class Sale {
     private Long id;
     private LocalDateTime date = LocalDateTime.now();
 
-    @ManyToOne
-    @JoinColumn(name = "product_id")
-    private Product product;
+    @ManyToMany
+    @JoinTable(
+            name = "sale_products",
+            joinColumns = @JoinColumn(name = "sale_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
+    private List<Product> products;
 
     @ManyToOne
     @JoinColumn(name = "seller_id")

@@ -2,7 +2,6 @@ package com.tecser.backend.controller;
 
 import com.tecser.backend.dto.request.SellerRequestDTO;
 import com.tecser.backend.dto.response.SellerResponseDTO;
-import com.tecser.backend.model.Seller;
 import com.tecser.backend.service.SellerService;
 import org.springframework.web.bind.annotation.*;
 

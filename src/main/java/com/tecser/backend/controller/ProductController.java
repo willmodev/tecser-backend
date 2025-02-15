@@ -3,7 +3,6 @@ package com.tecser.backend.controller;
 
 import com.tecser.backend.dto.request.ProductRequestDTO;
 import com.tecser.backend.dto.response.ProductResponseDTO;
-import com.tecser.backend.model.Product;
 import com.tecser.backend.service.ProductService;
 import org.springframework.web.bind.annotation.*;
 
