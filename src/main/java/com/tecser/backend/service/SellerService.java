@@ -8,6 +8,7 @@ import com.tecser.backend.model.Seller;
 import com.tecser.backend.repository.SellerRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,8 +28,9 @@ public class SellerService {
 
     public SellerResponseDTO save(SellerRequestDTO sellerRequestDTO) {
         Seller seller = mapper.toEntity(sellerRequestDTO);
-        return mapper.toResponseDto(repository.save(seller));
+        System.out.println(seller);
 
+        return mapper.toResponseDto(repository.save(seller));
     }
 
     public Optional<SellerResponseDTO> findById(Long id) {
@@ -37,6 +39,16 @@ public class SellerService {
 
     public void delete(Long id) {
         repository.deleteById(id);
+    }
+
+    @Transactional
+    public SellerResponseDTO update(SellerRequestDTO sellerRequestDTO, Long id) {
+        Seller seller = this.repository.findById(id).orElse(null);
+
+        if (seller == null)  return null;
+
+        this.mapper.updateEntityFromRequestDto(sellerRequestDTO, seller);
+        return this.mapper.toResponseDto(this.repository.save(seller));
     }
 
 }
