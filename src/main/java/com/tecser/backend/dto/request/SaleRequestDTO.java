@@ -5,15 +5,12 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
 
+
 @Data
 public class SaleRequestDTO {
     @NotBlank(message = "El número de venta es obligatorio")
     @Pattern(regexp = "^[A-Z0-9]{4,10}$", message = "El número de venta debe tener entre 4 y 10 caracteres alfanuméricos en mayúsculas")
     private String saleNumber;
-
-    @NotEmpty(message = "Debe incluir al menos un producto")
-    @Size(min = 1, message = "La venta debe tener al menos un producto")
-    private List<Long> productIds;
 
     @NotNull(message = "El ID del vendedor es obligatorio")
     @Positive(message = "El ID del vendedor debe ser un número positivo")
@@ -26,4 +23,7 @@ public class SaleRequestDTO {
 
     @Size(max = 500, message = "Los comentarios no pueden exceder los 500 caracteres")
     private String comments;
+
+    @NotEmpty(message = "Debe incluir al menos un detalle de venta")
+    private List<SaleDetailRequestDTO> saleDetails;
 }

@@ -12,6 +12,7 @@ public class SaleResponseDTO {
     private LocalDateTime date;
     private BigDecimal totalAmount;
     private String comments;
-    private List<ProductResponseDTO> products;
     private SellerResponseDTO seller;
+    private List<ProductResponseDTO> products;
+    private List<SaleDetailResponseDTO> saleDetails;
 }

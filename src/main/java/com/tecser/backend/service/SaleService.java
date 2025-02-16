@@ -1,12 +1,15 @@
 package com.tecser.backend.service;
 
+import com.tecser.backend.dto.request.SaleDetailRequestDTO;
 import com.tecser.backend.dto.request.SaleRequestDTO;
 import com.tecser.backend.dto.response.SaleResponseDTO;
 import com.tecser.backend.exception.BusinessException;
 import com.tecser.backend.exception.ResourceNotFoundException;
+import com.tecser.backend.mapper.SaleDetailMapper;
 import com.tecser.backend.mapper.SaleMapper;
 import com.tecser.backend.model.Product;
 import com.tecser.backend.model.Sale;
+import com.tecser.backend.model.SaleDetail;
 import com.tecser.backend.model.Seller;
 import com.tecser.backend.repository.ProductRepository;
 import com.tecser.backend.repository.SaleRepository;
@@ -20,7 +23,9 @@ import org.springframework.validation.annotation.Validated;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Validated
@@ -29,97 +34,127 @@ public class SaleService {
     private final SaleRepository saleRepository;
     private final ProductRepository productRepository;
     private final SellerRepository sellerRepository;
-    private final SaleMapper mapper;
+    private final SaleMapper saleMapper;
+    private final SaleDetailMapper saleDetailMapper;
 
     public SaleService(SaleRepository saleRepository,
                        ProductRepository productRepository,
                        SellerRepository sellerRepository,
-                       @Qualifier("saleMapperImpl") SaleMapper mapper) {
+                       @Qualifier("saleMapperImpl") SaleMapper saleMapper,
+                       SaleDetailMapper saleDetailMapper) {
         this.saleRepository = saleRepository;
         this.productRepository = productRepository;
         this.sellerRepository = sellerRepository;
-        this.mapper = mapper;
+        this.saleMapper = saleMapper;
+        this.saleDetailMapper = saleDetailMapper;
     }
 
     public List<SaleResponseDTO> findAll() {
         log.info("Obteniendo todas las ventas");
         return saleRepository.findAll().stream()
-                .map(mapper::toResponseDto)
-                .toList();
+                .map(saleMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
     public SaleResponseDTO createSale(@Valid SaleRequestDTO saleRequestDTO) {
         log.info("Iniciando proceso de creación de venta con número: {}", saleRequestDTO.getSaleNumber());
 
-        // Validar si ya existe una venta con el mismo número
+        // Validaciones iniciales
         validateSaleNumberUniqueness(saleRequestDTO.getSaleNumber());
-
-        Sale sale = mapper.toEntity(saleRequestDTO);
-
-        // Cargar y validar el vendedor
         Seller seller = findAndValidateSeller(saleRequestDTO.getSellerId());
+
+        // Obtener y validar productos
+        List<Long> productIds = saleRequestDTO.getSaleDetails().stream()
+                .map(SaleDetailRequestDTO::getProductId)
+                .collect(Collectors.toList());
+
+        Map<Long, Product> productsMap = findAndValidateProducts(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        // Crear la venta base
+        Sale sale = saleMapper.toEntity(saleRequestDTO);
         sale.setSeller(seller);
 
-        // Cargar y validar los productos
-        List<Product> products = findAndValidateProducts(saleRequestDTO.getProductIds());
-        sale.setProducts(products);
+        // Procesar y validar detalles
+        List<SaleDetail> details = saleDetailMapper.toEntityList(saleRequestDTO.getSaleDetails());
+        BigDecimal totalAmount = BigDecimal.ZERO;
 
+        log.info("Validando detalles de la venta {}", details);
 
+        for (SaleDetail detail : details) {
+            Product product = productsMap.get(detail.getProduct().getId());
+
+            // Validar stock
+            if (product.getStock() < detail.getQuantity()) {
+                throw new BusinessException(
+                        String.format("Stock insuficiente para el producto %s. Disponible: %d, Solicitado: %d",
+                                product.getName(), product.getStock(), detail.getQuantity())
+                );
+            }
+
+            // Configurar detalle
+            detail.setSale(sale);
+            detail.setProduct(product);
+            detail.setSubtotal(detail.getUnitPrice()
+                    .multiply(BigDecimal.valueOf(detail.getQuantity())));
+
+            // Actualizar stock
+            product.setStock(product.getStock() - detail.getQuantity());
+            productRepository.save(product);
+
+            // Acumular total
+            totalAmount = totalAmount.add(detail.getSubtotal());
+        }
+
+        // Actualizar venta con detalles y total
+        sale.setSaleDetails(details);
+        sale.setTotalAmount(totalAmount);
+
+        // Guardar y retornar
         Sale savedSale = saleRepository.save(sale);
         log.info("Venta creada exitosamente con ID: {}", savedSale.getId());
 
-        return mapper.toResponseDto(savedSale);
+        return saleMapper.toResponseDto(savedSale);
     }
 
     private void validateSaleNumberUniqueness(String saleNumber) {
-        Optional<Sale> existingSale = saleRepository.findBySaleNumber(saleNumber);
-        if (existingSale.isPresent()) {
-            log.error("Intento de crear venta con número duplicado: {}", saleNumber);
+        if (saleRepository.findBySaleNumber(saleNumber).isPresent()) {
             throw new BusinessException("Ya existe una venta con el número: " + saleNumber);
         }
     }
 
     private Seller findAndValidateSeller(Long sellerId) {
         return sellerRepository.findById(sellerId)
-                .orElseThrow(() -> {
-                    log.error("Vendedor no encontrado con ID: {}", sellerId);
-                    return new ResourceNotFoundException("Vendedor", "id", sellerId);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Vendedor no encontrado con ID: " + sellerId));
     }
 
     private List<Product> findAndValidateProducts(List<Long> productIds) {
-        List<Product> foundProducts = productRepository.findAllById(productIds);
+        List<Product> products = productRepository.findAllById(productIds);
 
-        if (foundProducts.size() != productIds.size()) {
-            List<Long> foundProductIds = foundProducts.stream()
+        if (products.size() != productIds.size()) {
+            List<Long> foundIds = products.stream()
                     .map(Product::getId)
                     .toList();
-
-            List<Long> notFoundProductIds = productIds.stream()
-                    .filter(id -> !foundProductIds.contains(id))
+            List<Long> missingIds = productIds.stream()
+                    .filter(id -> !foundIds.contains(id))
                     .toList();
-
-            log.error("Productos no encontrados: {}", notFoundProductIds);
-            throw new ResourceNotFoundException("No se encontraron los siguientes productos: " + notFoundProductIds);
+            throw new ResourceNotFoundException("Productos no encontrados con IDs: " + missingIds);
         }
 
-        validateProductsAvailability(foundProducts);
-        return foundProducts;
+        validateProductsAvailability(products);
+        return products;
     }
 
     private void validateProductsAvailability(List<Product> products) {
-        List<Product> unavailableProducts = products.stream()
-                .filter(product -> !product.isAvailable())
-                .toList();
+        List<String> unavailableProducts = products.stream()
+                .filter(p -> !p.isAvailable())
+                .map(Product::getName)
+                .collect(Collectors.toList());
 
         if (!unavailableProducts.isEmpty()) {
-            List<String> unavailableProductNames = unavailableProducts.stream()
-                    .map(Product::getName)
-                    .toList();
-
-            log.error("Productos no disponibles: {}", unavailableProductNames);
-            throw new BusinessException("Los siguientes productos no están disponibles: " + unavailableProductNames);
+            throw new BusinessException("Los siguientes productos no están disponibles: " +
+                    String.join(", ", unavailableProducts));
         }
     }
 }
