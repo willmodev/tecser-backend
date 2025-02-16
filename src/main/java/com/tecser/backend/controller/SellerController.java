@@ -54,4 +54,21 @@ public class SellerController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody SellerRequestDTO sellerRequestDTO, BindingResult result) {
+        if (result.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            result.getFieldErrors().forEach(error ->
+                    errors.put(error.getField(), error.getDefaultMessage())
+            );
+            return ResponseEntity.badRequest().body(errors);
+        }
+        SellerResponseDTO updatedSeller = service.update(sellerRequestDTO, id);
+        if (updatedSeller == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(updatedSeller);
+    }
+
 }

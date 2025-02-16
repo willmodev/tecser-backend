@@ -27,4 +27,9 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
 
+    public boolean isAvailable() {
+        return status == ProductStatus.ACTIVO && stock > 0;
+    }
+
+
 }

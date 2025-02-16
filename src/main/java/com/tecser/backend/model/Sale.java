@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,7 +17,17 @@ public class Sale {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(unique = true)
+    private String saleNumber;
+
     private LocalDateTime date = LocalDateTime.now();
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal totalAmount;
+
+    @Column(length = 500)
+    private String comments;
 
     @ManyToMany
     @JoinTable(
