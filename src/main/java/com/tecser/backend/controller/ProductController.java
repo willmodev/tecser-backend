@@ -29,12 +29,17 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ProductResponseDTO getById(Long id) {
+    public ProductResponseDTO getById(@PathVariable Long id) {
         return service.findById(id).orElseThrow();
     }
 
     @DeleteMapping("/{id}")
     public void delete(Long id) {
         service.delete(id);
+    }
+
+    @PutMapping("/{id}")
+    public ProductResponseDTO update(@RequestBody ProductRequestDTO product, @PathVariable Long id) {
+        return  service.update(product, id);
     }
 }

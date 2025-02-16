@@ -7,6 +7,7 @@ import com.tecser.backend.model.Product;
 import com.tecser.backend.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,9 +40,14 @@ public class ProductService {
         repository.deleteById(id);
     }
 
-    // Update Method
-    public ProductResponseDTO update(ProductRequestDTO productRequestDTO) {
-        Product product = mapper.toEntity(productRequestDTO);
-        return mapper.toResponseDto(repository.save(product));
+    @Transactional
+    public ProductResponseDTO update(ProductRequestDTO productRequestDTO, Long id) {
+        Product product = this.repository.findById(id).orElse(null);
+
+        if (product == null)  return null;
+
+        this.mapper.updateEntityFromRequestDto(productRequestDTO, product);
+        return this.mapper.toResponseDto(this.repository.save(product));
+
     }
 }
