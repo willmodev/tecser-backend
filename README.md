@@ -17,7 +17,7 @@ Antes de comenzar, asegúrate de tener instalado:
 
 ```bash
 git clone <URL_DEL_REPOSITORIO>
-cd test-junior-developer
+cd tecser-backend
 ```
 
 ### 2. Configuración de la Base de Datos
@@ -39,6 +39,35 @@ Esto iniciará un contenedor con SQL Server con las siguientes configuraciones:
 - Usuario: sa
 - Contraseña: SqlServer2023!
 - Base de datos: store-db
+
+3. Configuración del Trigger para el Estado de Productos:
+   Después de que las tablas se hayan creado automáticamente, debes conectarte a la base de datos y ejecutar el siguiente trigger:
+
+```sql
+CREATE TRIGGER trg_UpdateProductStatus
+ON products
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    -- Actualizar el estado a 'AGOTADO' cuando el stock sea 0
+    UPDATE p
+    SET p.status = 'AGOTADO'
+    FROM products p
+    INNER JOIN inserted i ON p.id = i.id
+    WHERE i.stock = 0;
+
+    -- Opcional: Cambiar el estado a 'ACTIVO' si el stock vuelve a ser mayor que 0
+    UPDATE p
+    SET p.status = 'ACTIVO'
+    FROM products p
+    INNER JOIN inserted i ON p.id = i.id
+    WHERE i.stock > 0 AND p.status = 'AGOTADO';
+END;
+```
+
+Este trigger se encarga de:
+- Actualizar automáticamente el estado de los productos a 'AGOTADO' cuando su stock llega a 0
+- Cambiar el estado a 'ACTIVO' cuando el stock vuelve a ser mayor que 0
 
 ### 3. Configuración del Proyecto
 
@@ -80,6 +109,13 @@ La aplicación utiliza:
 - Lombok
 - SQL Server
 
+## Modelo de Datos
+
+### Diagrama Relacional de la Base de Datos
+Este diagrama muestra la estructura y relaciones de las tablas en la base de datos:
+
+![Diagrama Relacional](relational-diagram.svg)
+
 ## Endpoints de la API
 
 La API está configurada con el contexto base `/api`
@@ -87,13 +123,13 @@ La API está configurada con el contexto base `/api`
 ## Solución de Problemas Comunes
 
 1. **Error de conexión a la base de datos**
-    - Verificar que el contenedor Docker esté en ejecución
-    - Comprobar las credenciales en application.yml
-    - Verificar que el puerto 1433 esté disponible
+   - Verificar que el contenedor Docker esté en ejecución
+   - Comprobar las credenciales en application.yml
+   - Verificar que el puerto 1433 esté disponible
 
 2. **Error al iniciar la aplicación**
-    - Verificar que Java 21 esté instalado y configurado correctamente
-    - Comprobar que todas las dependencias se hayan descargado
+   - Verificar que Java 21 esté instalado y configurado correctamente
+   - Comprobar que todas las dependencias se hayan descargado
 
 ## Notas Adicionales
 
