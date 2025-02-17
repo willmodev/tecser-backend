@@ -9,7 +9,7 @@ public class SellerResponseDTO {
     private String name;
     private String email;
     private String phone;
-    private String documentId;
+    private String documentNumber;
     private LocalDateTime registrationDate;
     private Boolean isActive;
 }

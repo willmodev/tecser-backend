@@ -24,22 +24,7 @@ public interface SaleDetailMapper {
     @Mapping(source = "productId", target = "product.id")
     @Mapping(target = "subtotal", ignore = true)
     SaleDetail toEntity(SaleDetailRequestDTO dto);
-
-    @Named("toSaleDetailOnly")
-    default SaleDetailResponseDTO toSaleDetailOnly(SaleDetail saleDetail) {
-        if (saleDetail == null) {
-            return null;
-        }
-
-        return SaleDetailResponseDTO.builder()
-                .id(saleDetail.getId())
-                .productId(saleDetail.getProduct().getId())
-                .productName(saleDetail.getProduct().getName())
-                .quantity(saleDetail.getQuantity())
-                .unitPrice(saleDetail.getUnitPrice())
-                .subtotal(saleDetail.getSubtotal())
-                .build();
-    }
+    
     List<SaleDetail> toEntityList(List<SaleDetailRequestDTO> dtos);
 
 

@@ -157,4 +157,14 @@ public class SaleService {
                     String.join(", ", unavailableProducts));
         }
     }
+
+//    private void validateTotalAmount(SaleRequestDTO saleRequestDTO) {
+//        BigDecimal calculatedTotal = saleRequestDTO.getSaleDetails().stream()
+//                .map(detail -> detail.getUnitPrice().multiply(BigDecimal.valueOf(detail.getQuantity())))
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//        if (!calculatedTotal.equals(saleRequestDTO.getTotalAmount())) {
+//            throw new ValidationException("El monto total no coincide con la suma de los detalles");
+//        }
+//    }
 }

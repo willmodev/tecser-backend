@@ -1,10 +1,10 @@
 package com.tecser.backend.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
-
 
 @Data
 public class SaleRequestDTO {
@@ -25,5 +25,7 @@ public class SaleRequestDTO {
     private String comments;
 
     @NotEmpty(message = "Debe incluir al menos un detalle de venta")
+    @Size(min = 1, max = 100, message = "La venta debe tener entre 1 y 100 detalles")
+    @Valid
     private List<SaleDetailRequestDTO> saleDetails;
 }

@@ -12,6 +12,7 @@ import java.util.List;
 public interface ProductMapper {
 
     Product toEntity(ProductRequestDTO productRequestDTO);
+
     ProductResponseDTO toResponseDto(Product entity);
     void updateEntityFromRequestDto(ProductRequestDTO productRequestDTO, @MappingTarget Product product);
     List<ProductResponseDTO> toRequestDtoList(List<Product> entityList);

@@ -4,15 +4,14 @@ import com.tecser.backend.dto.request.SellerRequestDTO;
 import com.tecser.backend.dto.response.SellerResponseDTO;
 import com.tecser.backend.service.SellerService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/sellers")
 public class SellerController {
@@ -25,50 +24,52 @@ public class SellerController {
 
     @GetMapping
     public ResponseEntity<List<SellerResponseDTO>> getAll() {
-        List<SellerResponseDTO> sellers = service.findAll();
-        return ResponseEntity.ok().body(sellers);
-    }
-
-    @PostMapping
-    public ResponseEntity<?> save(@Valid @RequestBody SellerRequestDTO sellerRequestDTO, BindingResult result) {
-        if (result.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            result.getFieldErrors().forEach(error ->
-                    errors.put(error.getField(), error.getDefaultMessage())
-            );
-            return ResponseEntity.badRequest().body(errors);
-        }
-        SellerResponseDTO savedSeller = service.save(sellerRequestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedSeller);
+        log.debug("REST request para obtener todos los vendedores");
+        List<SellerResponseDTO> result = service.findAll();
+        return ResponseEntity.ok().body(result);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SellerResponseDTO> getById(@PathVariable Long id) {
-        return service.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        log.debug("REST request para obtener el vendedor con ID: {}", id);
+        SellerResponseDTO result = service.findById(id);
+        return ResponseEntity.ok().body(result);
     }
+
+    @PostMapping
+    public ResponseEntity<SellerResponseDTO> save(@Valid @RequestBody SellerRequestDTO seller) {
+       log.debug("REST request para guardar un nuevo vendedor: {}", seller);
+       if (seller == null) {
+           log.error("El vendedor no puede ser null");
+           return ResponseEntity.badRequest().build();
+       }
+       SellerResponseDTO result = service.save(seller);
+       return ResponseEntity.status(HttpStatus.CREATED)
+               .body(result);
+
+    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        log.debug("REST request para eliminar el vendedor con ID: {}", id);
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody SellerRequestDTO sellerRequestDTO, BindingResult result) {
-        if (result.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            result.getFieldErrors().forEach(error ->
-                    errors.put(error.getField(), error.getDefaultMessage())
-            );
-            return ResponseEntity.badRequest().body(errors);
-        }
-        SellerResponseDTO updatedSeller = service.update(sellerRequestDTO, id);
-        if (updatedSeller == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(updatedSeller);
+    public ResponseEntity<SellerResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody SellerRequestDTO seller) {
+       log.debug("REST request para actualizar el vendedor con ID: {}", id);
+
+       if (seller == null) {
+           log.error("El vendedor no puede ser null");
+           return ResponseEntity.badRequest().build();
+       }
+
+       SellerResponseDTO result = service.update(seller, id);
+       return ResponseEntity.ok().body(result);
     }
 
 }

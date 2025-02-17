@@ -1,11 +1,13 @@
 package com.tecser.backend.dto.response;
 
-import com.tecser.backend.dto.request.ProductRequestDTO;
 import lombok.Data;
+import lombok.Builder;
+
+import java.math.BigDecimal;
 
 @Data
+@Builder
 public class ProductResponseDTO {
-
     public enum ProductStatus {
         ACTIVO,
         INACTIVO,
@@ -14,8 +16,8 @@ public class ProductResponseDTO {
 
     private Long id;
     private String name;
-    private Double price;
+    private BigDecimal price;
     private String description;
     private Integer stock;
-    private ProductStatus status;
+    private ProductStatus status;;
 }

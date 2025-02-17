@@ -9,7 +9,7 @@ import java.util.List;
 public class SaleResponseDTO {
     private Long id;
     private String saleNumber;
-    private LocalDateTime date;
+    private LocalDateTime saleDate;
     private BigDecimal totalAmount;
     private String comments;
     private SellerResponseDTO seller;

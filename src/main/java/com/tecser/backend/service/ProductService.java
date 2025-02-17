@@ -9,9 +9,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
 
+import java.util.List;
+import com.tecser.backend.exception.ResourceNotFoundException;
+import lombok.extern.slf4j.Slf4j;
+
+
+@Slf4j
 @Service
 public class ProductService {
 
@@ -23,31 +27,54 @@ public class ProductService {
         this.mapper = mapper;
     }
 
+    @Transactional(readOnly = true)
     public List<ProductResponseDTO> findAll() {
-        return mapper.toRequestDtoList(this.repository.findAll());
+        log.debug("Buscando todos los productos");
+        return mapper.toRequestDtoList(repository.findAll());
     }
 
-    public Optional<ProductResponseDTO> findById(Long id) {
-        return  repository.findById(id).map(mapper::toResponseDto);
+    @Transactional(readOnly = true)
+    public ProductResponseDTO findById(Long id) {
+        log.debug("Buscando producto por ID: {}", id);
+        return repository.findById(id)
+                .map(mapper::toResponseDto)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
     }
 
+    @Transactional
     public ProductResponseDTO save(ProductRequestDTO productRequestDTO) {
+        log.debug("Guardando nuevo producto: {}", productRequestDTO);
+
         Product product = mapper.toEntity(productRequestDTO);
-        return mapper.toResponseDto(repository.save(product));
+        Product savedProduct = repository.save(product);
+        log.info("Producto guardado exitosamente con ID: {}", savedProduct.getId());
+        return mapper.toResponseDto(savedProduct);
     }
 
+    @Transactional
     public void delete(Long id) {
+        log.debug("Eliminando producto con ID: {}", id);
+
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Producto no encontrado con ID: " + id);
+        }
+
         repository.deleteById(id);
+        log.info("Producto eliminado exitosamente con ID: {}", id);
     }
 
     @Transactional
     public ProductResponseDTO update(ProductRequestDTO productRequestDTO, Long id) {
-        Product product = this.repository.findById(id).orElse(null);
+        log.debug("Actualizando producto con ID: {}", id);
 
-        if (product == null)  return null;
+        Product product = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
 
-        this.mapper.updateEntityFromRequestDto(productRequestDTO, product);
-        return this.mapper.toResponseDto(this.repository.save(product));
-
+        mapper.updateEntityFromRequestDto(productRequestDTO, product);
+        Product updatedProduct = repository.save(product);
+        log.info("Producto actualizado exitosamente con ID: {}", id);
+        return mapper.toResponseDto(updatedProduct);
     }
+
+
 }
